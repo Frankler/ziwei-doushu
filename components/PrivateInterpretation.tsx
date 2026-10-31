@@ -30,7 +30,13 @@ export default function PrivateInterpretation({ chart }: { chart: ZiweiChart }) 
     const key = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}-${hour}-${gender}`;
     setReadings(null);
     setSelected('overview');
-    setStatus('正在读取该年份的公开解读数据（不上传个人出生信息）…');
+    setStatus('正在读取该年份的一组公开解读数据（不上传个人出生信息）…');
+
+    // SHA-256 first byte determines one of 16 private-lookup buckets.
+    async function bucketForKey(value: string): Promise<string> {
+      const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value));
+      return 'b' + (new Uint8Array(digest)[0] & 15).toString().padStart(2, '0');
+    }
 
     async function load() {
       if (year < 1950 || year > 2026) {
@@ -38,7 +44,8 @@ export default function PrivateInterpretation({ chart }: { chart: ZiweiChart }) 
         return;
       }
       try {
-        const res = await fetch(`/interpretations/${year}.jsonl.gz`, {
+        const bucket = await bucketForKey(key);
+        const res = await fetch(`/interpretations/${year}/${bucket}.jsonl.gz`, {
           signal: ac.signal,
           cache: 'force-cache',
         });

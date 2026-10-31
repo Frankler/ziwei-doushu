@@ -3,7 +3,6 @@ import { useState } from 'react';
 import BirthForm from '@/components/BirthForm';
 import ChartBoard from '@/components/ChartBoard';
 import PrivateInterpretation from '@/components/PrivateInterpretation';
-import ChartSummary from '@/components/ChartSummary';
 
 import { generateChart } from '@/lib/ziwei/algorithm';
 import type { BirthInfo, ZiweiChart } from '@/lib/ziwei/types';
@@ -51,7 +50,6 @@ export default function ChartPage() {
       </button>
 
       <ChartBoard chart={chart} />
-      <ChartSummary chart={chart} />
       <PrivateInterpretation chart={chart} />
     </main>
   );

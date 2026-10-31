@@ -8,7 +8,7 @@ on:
 
 jobs:
   check:
-    name: 类型检查 + 排盘回归
+    name: 类型检查 + 排盘回归 + Next.js 构建
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -27,3 +27,8 @@ jobs:
 
       - name: 排盘引擎回归
         run: npm test
+
+      - name: Next.js 构建验证（检查 server-only/client 边界）
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+        run: npm run build

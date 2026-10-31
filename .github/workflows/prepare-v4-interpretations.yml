@@ -1,0 +1,49 @@
+name: Prepare v4 interpretations for one year
+
+on:
+  workflow_dispatch:
+    inputs:
+      year:
+        description: "Birth year (1950-2026)"
+        required: true
+        type: string
+        default: "1990"
+
+permissions:
+  contents: write
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate year
+        env:
+          YEAR: ${{ inputs.year }}
+        run: |
+          python3 -c 'import os; y=os.environ["YEAR"]; assert y.isdecimal() and 1950 <= int(y) <= 2026'
+      - name: Install zstd
+        run: sudo apt-get update -qq && sudo apt-get install -y zstd
+      - name: Download and verify upstream release
+        env:
+          YEAR: ${{ inputs.year }}
+        run: |
+          set -euo pipefail
+          BASE="https://github.com/Renhuai123/ziwei-doushu/releases/download/v4.0-13d"
+          curl -fL --retry 3 -o "year-${YEAR}.jsonl.zst" "${BASE}/year-${YEAR}.jsonl.zst"
+          curl -fL --retry 3 -o SHA256SUMS.txt "${BASE}/SHA256SUMS.txt"
+          grep "year-${YEAR}.jsonl.zst" SHA256SUMS.txt | sha256sum -c -
+          python3 scripts/prepare-v4-year.py "${YEAR}" "year-${YEAR}.jsonl.zst"
+      - name: Commit static year data
+        env:
+          YEAR: ${{ inputs.year }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "public/interpretations/${YEAR}.jsonl.gz"
+          if ! git diff --cached --quiet; then
+            git commit -m "data: add v4 interpretations for ${YEAR}"
+            git push
+          fi
